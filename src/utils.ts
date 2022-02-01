@@ -1,4 +1,4 @@
-// import { Buffer } from 'buffer';
+import { Buffer } from 'buffer';
 import * as CryptoJS from 'crypto-js';
 import {
   FocusPoint,
@@ -7,13 +7,11 @@ import {
   RGBColor,
 } from './types';
 
-const createHmac = (encoding: string, key: string) => {
+const createHmac = (encoding: string, key: Buffer) => {
   if (encoding !== 'sha256') {
     throw new Error("Only 'sha256' encoding is supported");
   }
-  // const key = CryptoJS.enc.Utf8.parse(privateKey.toString());
-  const hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA256, key);
-  // const hmac = CryptoJS.algo.SHA256.create({ }); // CryptoJS.HmacSHA256(timestamp, key);
+  const hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA256, key.toString());
   return hmac;
 };
 
@@ -56,5 +54,7 @@ export const sign = (
   const hmac = createHmac('sha256', hexDecode(key));
   hmac.update(hexDecode(salt).toString());
   hmac.update(target);
-  return urlSafeEncode(hmac.finalize());
+  return urlSafeEncode(
+    Buffer.from(hmac.finalize().toString(CryptoJS.enc.Hex), 'hex')
+  );
 };
