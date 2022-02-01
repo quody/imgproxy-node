@@ -1,5 +1,5 @@
-import * as CryptoJS from "crypto-js";
-import { Buffer } from "buffer";
+// import { Buffer } from 'buffer';
+import * as CryptoJS from 'crypto-js';
 import {
   FocusPoint,
   ImgproxySecureConfig,
@@ -7,11 +7,13 @@ import {
   RGBColor,
 } from './types';
 
-const createHmac = (encoding, privateKey) => {
-  const key = CryptoJS.enc.Utf8.parse(privateKey);
-  const ts = new Date().getTime();
-  const timestamp = CryptoJS.enc.Utf8.parse(ts);
-  const hmac = CryptoJS.enc.Hex.stringify(CryptoJS.HmacSHA256(timestamp, key));
+const createHmac = (encoding: string, key: string) => {
+  if (encoding !== 'sha256') {
+    throw new Error("Only 'sha256' encoding is supported");
+  }
+  // const key = CryptoJS.enc.Utf8.parse(privateKey.toString());
+  const hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA256, key);
+  // const hmac = CryptoJS.algo.SHA256.create({ }); // CryptoJS.HmacSHA256(timestamp, key);
   return hmac;
 };
 
@@ -52,7 +54,7 @@ export const sign = (
   size: number = 32
 ) => {
   const hmac = createHmac('sha256', hexDecode(key));
-  hmac.update(hexDecode(salt));
+  hmac.update(hexDecode(salt).toString());
   hmac.update(target);
-  return urlSafeEncode(hmac.digest().slice(0, size));
+  return urlSafeEncode(hmac.finalize());
 };
