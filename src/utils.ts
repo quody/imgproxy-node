@@ -7,11 +7,13 @@ import {
   RGBColor,
 } from './types';
 
-const createHmac = (encoding: string, key: Buffer) => {
+const createHmac = (encoding: string, key: string) => {
   if (encoding !== 'sha256') {
     throw new Error("Only 'sha256' encoding is supported");
   }
-  const hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA256, key.toString());
+
+  const hmmkey = CryptoJS.enc.Hex.parse(key);
+  const hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA256, hmmkey);
   return hmac;
 };
 
@@ -36,8 +38,6 @@ export const isSecureConfig = (config: any): config is ImgproxySecureConfig => {
   return 'key' in config && 'salt' in config;
 };
 
-const hexDecode = (hex: string) => Buffer.from(hex, 'hex');
-
 export const urlSafeEncode = (data: any) =>
   Buffer.from(data, 'utf8')
     .toString('base64')
@@ -51,10 +51,12 @@ export const sign = (
   target: string,
   size: number = 32
 ) => {
-  const hmac = createHmac('sha256', hexDecode(key));
-  hmac.update(hexDecode(salt).toString());
+  const hmac = createHmac('sha256', key);
+  hmac.update(CryptoJS.enc.Hex.parse(salt));
   hmac.update(target);
-  return urlSafeEncode(
-    Buffer.from(hmac.finalize().toString(CryptoJS.enc.Hex), 'hex')
-  );
+  const hash = Buffer.from(
+    hmac.finalize().toString(CryptoJS.enc.Hex),
+    'hex'
+  ).slice(0, size);
+  return urlSafeEncode(hash);
 };
